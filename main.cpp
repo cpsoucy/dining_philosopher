@@ -29,20 +29,27 @@ void philosopher(int id) {
     // philosopher is thinking:
     philosopherStates[id] = THINKING;
     if (philosopherHungerMeters[id] >= 10) {
-      cout << "Philosopher " << id << " has died." << endl;
+      philosopherStates[id] = DEAD;
+      cout << "Philosopher " << id << " has died. The program will terminate now." << endl;
       exit(0);
     }
-    cout << "Philosopher " << id << " is thinking. Hunger meter: " << philosopherHungerMeters[id] << en\
-dl;
+    cout << "Philosopher " << id << " is thinking. Hunger meter: " << philosopherHungerMeter\
+s[id] << endl;
     this_thread::sleep_for(chrono::milliseconds(dist(rng)));
-    philosopherHungerMeters[id] += 1;
+    philosopherHungerMeters[id]+= 1;
 
-    //philosopher is aquiring forks:
+//------------------------------------------
+    //philosopher is hungry, attempting to aquire forks:
     philosopherStates[id] = HUNGRY;
-    cout << "Philosopher " << id << " is hungry. Hunger meter: " << philosopherHungerMeters[id] << endl\
-;
+    cout << "Philosopher " << id << " is hungry. Hunger meter: " << philosopherHungerMeters[\
+id] << endl;
     bool hasLeftFork = false;
     while (!hasLeftFork) {
+
+      cout << "phil." << id << "is waiting for both forks. hunger is increasing" << endl;
+      philosopherHungerMeters[id]++;
+      this_thread::sleep_for(chrono::milliseconds(dist(rng)));
+
       forks[id].lock();
       if (!forks[(id + 1) % NUM_PHILOSOPHERS].try_lock()) {
         forks[id].unlock();
@@ -53,34 +60,39 @@ dl;
     }
     philosopherHungerMeters[id] -= 1;
 
+//------------------------------------------
     philosopherStates[id] = EATING;
-
     //philosopher is able to eat after aquiring forks:
-    cout << "Philosopher " << id << " is eating. Hunger meter: " << philosopherHungerMeters[id] << endl\
-;
+    cout << "Philosopher " << id << " is eating. Hunger meter: " << philosopherHungerMeters[\
+id] << endl;
     this_thread::sleep_for(chrono::milliseconds(dist(rng)));
+
+//------------------------------------------
     philosopherStates[id] = THINKING;
 
-    //philosopher is putting down forks after eating, so other philosophers can aquire forks:
+    //philosopher is putting down forks after eating, so other philosophers can aquire forks\
+:
     forks[id].unlock();
     forks[(id + 1) % NUM_PHILOSOPHERS].unlock();
   }
 }
+
+
 int main() {
   thread philosophers[NUM_PHILOSOPHERS];
 
-  // Initialize philosopher states:
+  // Uniformly nitializing philosopher states:
   for (int i = 0; i < NUM_PHILOSOPHERS; i++) {
     philosopherStates[i] = THINKING;
     philosopherHungerMeters[i] = 0;
   }
 
-  // Create philosopher threads:
+  // Creating philosopher threads:
   for (int i = 0; i < NUM_PHILOSOPHERS; i++) {
     philosophers[i] = thread(philosopher, i);
   }
 
-  // Wait for philosopher threads to finish:
+  // Waiting for philosopher threads to finish:
   for (int i = 0; i < NUM_PHILOSOPHERS; i++) {
     philosophers[i].join();
   }
